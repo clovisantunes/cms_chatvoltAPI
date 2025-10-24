@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import * as examesController from '../../controllers/examesController.js';
+
 const router = express.Router();
-const examesController = require('../controllers/examesController');
 
 // Rotas principais
 router.get('/', examesController.getAllExames);
@@ -12,4 +13,4 @@ router.get('/search/:query', examesController.searchServicos);
 router.get('/lista/categorias', examesController.getCategorias);
 router.get('/lista/tipos', examesController.getTipos);
 
-module.exports = router;
+export default router;
