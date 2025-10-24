@@ -1,7 +1,6 @@
 import db from '../config/firebase.js';
 
 class ExamesService {
-  // Buscar todos os exames
   async getAllExames() {
     try {
       if (!db) {
@@ -28,60 +27,65 @@ class ExamesService {
       throw new Error(`Erro ao buscar exames: ${error.message}`);
     }
   }
-  async buscaInteligente(query) {
-    try {
-      if (!db) {
-        throw new Error('Firebase não configurado');
-      }
+async buscaInteligente(query) {
+  try {
+    if (!db) {
+      throw new Error('Firebase não configurado');
+    }
 
-      const snapshot = await db.collection('exames').get();
-      
-      if (snapshot.empty) {
-        return [];
-      }
+    const snapshot = await db.collection('exames').get();
+    
+    if (snapshot.empty) {
+      return [];
+    }
 
-      const resultados = [];
-      const queryLower = query.toLowerCase();
+    const resultados = [];
+    const queryLower = query.toLowerCase();
+    
+    // SEPARA A QUERY EM PALAVRAS
+    const palavras = queryLower.split(' ');
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const { tipo, categorias } = data;
       
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const { tipo, categorias } = data;
-        
-        categorias?.forEach(categoria => {
-          categoria.exames?.forEach(exame => {
-            const { servico, valor } = exame;
-            
-            // BUSCA EM TODOS OS CAMPOS
-            const matchesTipo = tipo?.toLowerCase().includes(queryLower);
-            const matchesCategoria = categoria.categoria?.toLowerCase().includes(queryLower);
-            const matchesServico = servico?.toLowerCase().includes(queryLower);
-            const matchesValor = valor?.toString().includes(query);
-            
-            if (matchesTipo || matchesCategoria || matchesServico || matchesValor) {
-              resultados.push({
-                id: doc.id,
-                tipo,
-                categoria: categoria.categoria,
-                servico,
-                valor,
-                matchTipo: matchesTipo,
-                matchCategoria: matchesCategoria,
-                matchServico: matchesServico,
-                matchValor: matchesValor
-              });
-            }
+      categorias?.forEach(categoria => {
+        categoria.exames?.forEach(exame => {
+          const { servico, valor } = exame;
+          
+          // VERIFICA CADA PALAVRA DA QUERY
+          let matches = 0;
+          
+          palavras.forEach(palavra => {
+            if (tipo?.toLowerCase().includes(palavra)) matches++;
+            if (categoria.categoria?.toLowerCase().includes(palavra)) matches++;
+            if (servico?.toLowerCase().includes(palavra)) matches++;
+            if (valor?.toString().includes(palavra)) matches++;
           });
+          
+          // SE ENCONTROU PELO MENOS UMA PALAVRA, ADICIONA
+          if (matches > 0) {
+            resultados.push({
+              id: doc.id,
+              tipo,
+              categoria: categoria.categoria,
+              servico,
+              valor,
+              score: matches // quantas palavras encontrou
+            });
+          }
         });
       });
+    });
 
-      return resultados;
-    } catch (error) {
-      console.error('Erro na busca inteligente:', error);
-      throw new Error(`Erro ao buscar: ${error.message}`);
-    }
+    // ORDENA POR SCORE (mais matches primeiro)
+    return resultados.sort((a, b) => b.score - a.score);
+  } catch (error) {
+    console.error('Erro na busca inteligente:', error);
+    throw new Error(`Erro ao buscar: ${error.message}`);
   }
+}
 
-  // Buscar exame por ID
   async getExameById(id) {
     try {
       if (!db) {
