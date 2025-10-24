@@ -1,9 +1,13 @@
-const db = require('../config/firebase');
+import db from '../config/firebase.js';
 
 class ExamesService {
   // Buscar todos os exames
   async getAllExames() {
     try {
+      if (!db) {
+        throw new Error('Firebase não configurado');
+      }
+
       const snapshot = await db.collection('exames').get();
       
       if (snapshot.empty) {
@@ -20,6 +24,7 @@ class ExamesService {
 
       return exames;
     } catch (error) {
+      console.error('Erro no Firebase:', error);
       throw new Error(`Erro ao buscar exames: ${error.message}`);
     }
   }
@@ -27,6 +32,10 @@ class ExamesService {
   // Buscar exame por ID
   async getExameById(id) {
     try {
+      if (!db) {
+        throw new Error('Firebase não configurado');
+      }
+
       const doc = await db.collection('exames').doc(id).get();
       
       if (!doc.exists) {
@@ -45,6 +54,10 @@ class ExamesService {
   // Buscar exames por tipo
   async getExamesByTipo(tipo) {
     try {
+      if (!db) {
+        throw new Error('Firebase não configurado');
+      }
+
       const snapshot = await db.collection('exames')
         .where('tipo', '==', tipo)
         .get();
@@ -70,6 +83,10 @@ class ExamesService {
   // Buscar por serviço específico
   async searchServicos(query) {
     try {
+      if (!db) {
+        throw new Error('Firebase não configurado');
+      }
+
       const snapshot = await db.collection('exames').get();
       
       if (snapshot.empty) {
@@ -113,6 +130,10 @@ class ExamesService {
   // Buscar todas as categorias disponíveis
   async getCategorias() {
     try {
+      if (!db) {
+        throw new Error('Firebase não configurado');
+      }
+
       const snapshot = await db.collection('exames').get();
       
       if (snapshot.empty) {
@@ -139,6 +160,10 @@ class ExamesService {
   // Buscar todos os tipos disponíveis
   async getTipos() {
     try {
+      if (!db) {
+        throw new Error('Firebase não configurado');
+      }
+
       const snapshot = await db.collection('exames').get();
       
       if (snapshot.empty) {
@@ -161,4 +186,4 @@ class ExamesService {
   }
 }
 
-module.exports = new ExamesService();
+export default new ExamesService();

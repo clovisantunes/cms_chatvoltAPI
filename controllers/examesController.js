@@ -1,4 +1,4 @@
-const examesService = require('../services/examesService');
+import examesService from '../services/examesService.js';
 
 class ExamesController {
   // GET /api/exames - Todos os exames
@@ -128,4 +128,4 @@ class ExamesController {
   }
 }
 
-module.exports = new ExamesController();
+export default new ExamesController();
