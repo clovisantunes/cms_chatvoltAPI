@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 
-import examesRoutes from './routes/exames.js';
+import examesRoutes from './api/routes/route.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
