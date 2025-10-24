@@ -40,10 +40,13 @@ async buscaInteligente(query) {
     }
 
     const resultados = [];
-    const queryLower = query.toLowerCase();
+    const queryLower = query.toLowerCase().trim();
     
-    // SEPARA A QUERY EM PALAVRAS
-    const palavras = queryLower.split(' ');
+    // SEPARA A QUERY EM PALAVRAS E REMOVE PALAVRAS COMUNS
+    const palavras = queryLower.split(' ')
+      .filter(palavra => 
+        !['de', 'da', 'do', 'com', 'para', 'por', 'em', 'no', 'na'].includes(palavra)
+      );
     
     snapshot.forEach(doc => {
       const data = doc.data();
@@ -53,32 +56,60 @@ async buscaInteligente(query) {
         categoria.exames?.forEach(exame => {
           const { servico, valor } = exame;
           
-          // VERIFICA CADA PALAVRA DA QUERY
-          let matches = 0;
+          // NORMALIZA O SERVIÇO PARA BUSCA
+          const servicoLower = servico.toLowerCase();
+          const servicoSemAcentos = servicoLower
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           
+          // VERIFICA CORRESPONDÊNCIAS
+          let score = 0;
+          
+          // Busca por palavra-chave principal
+          if (queryLower.includes('ginec') && servicoLower.includes('ginec')) {
+            score += 10;
+          }
+          if (queryLower.includes('cardio') && servicoLower.includes('cardio')) {
+            score += 10;
+          }
+          if (queryLower.includes('eco') && servicoLower.includes('eco')) {
+            score += 10;
+          }
+          if (queryLower.includes('abdomen') && servicoLower.includes('abdomen')) {
+            score += 10;
+          }
+          if (queryLower.includes('ultrassom') && servicoLower.includes('ultrassom')) {
+            score += 10;
+          }
+          
+          // Busca por palavras individuais
           palavras.forEach(palavra => {
-            if (tipo?.toLowerCase().includes(palavra)) matches++;
-            if (categoria.categoria?.toLowerCase().includes(palavra)) matches++;
-            if (servico?.toLowerCase().includes(palavra)) matches++;
-            if (valor?.toString().includes(palavra)) matches++;
+            if (servicoLower.includes(palavra)) score += 5;
+            if (servicoSemAcentos.includes(palavra)) score += 3;
+            if (categoria.categoria.toLowerCase().includes(palavra)) score += 2;
+            if (tipo.toLowerCase().includes(palavra)) score += 1;
           });
           
-          // SE ENCONTROU PELO MENOS UMA PALAVRA, ADICIONA
-          if (matches > 0) {
+          // Busca por sinônimos
+          if (queryLower.includes('usg') && servicoLower.includes('ecografia')) score += 8;
+          if (queryLower.includes('ultrassom') && servicoLower.includes('ecografia')) score += 8;
+          if (queryLower.includes('consulta') && servicoLower.includes('consulta')) score += 5;
+          
+          // SE TEM SCORE SUFICIENTE, ADICIONA
+          if (score >= 3) {
             resultados.push({
               id: doc.id,
               tipo,
               categoria: categoria.categoria,
               servico,
               valor,
-              score: matches // quantas palavras encontrou
+              score: score
             });
           }
         });
       });
     });
 
-    // ORDENA POR SCORE (mais matches primeiro)
+    // ORDENA POR SCORE (mais relevantes primeiro)
     return resultados.sort((a, b) => b.score - a.score);
   } catch (error) {
     console.error('Erro na busca inteligente:', error);
