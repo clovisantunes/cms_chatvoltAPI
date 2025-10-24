@@ -90,6 +90,32 @@ class ExamesController {
       });
     }
   }
+    async buscaInteligente(req, res) {
+    try {
+      const { query } = req.params;
+      
+      if (!query || query.length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: 'Query deve ter pelo menos 2 caracteres'
+        });
+      }
+
+      const resultados = await examesService.buscaInteligente(query);
+      
+      res.json({
+        success: true,
+        query,
+        count: resultados.length,
+        data: resultados
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
 
   // GET /api/exames/lista/categorias - Todas as categorias
   async getCategorias(req, res) {
@@ -125,7 +151,10 @@ class ExamesController {
         error: error.message
       });
     }
+    
   }
+  
 }
+
 
 export default new ExamesController();

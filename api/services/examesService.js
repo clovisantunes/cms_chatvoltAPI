@@ -28,6 +28,58 @@ class ExamesService {
       throw new Error(`Erro ao buscar exames: ${error.message}`);
     }
   }
+  async buscaInteligente(query) {
+    try {
+      if (!db) {
+        throw new Error('Firebase não configurado');
+      }
+
+      const snapshot = await db.collection('exames').get();
+      
+      if (snapshot.empty) {
+        return [];
+      }
+
+      const resultados = [];
+      const queryLower = query.toLowerCase();
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const { tipo, categorias } = data;
+        
+        categorias?.forEach(categoria => {
+          categoria.exames?.forEach(exame => {
+            const { servico, valor } = exame;
+            
+            // BUSCA EM TODOS OS CAMPOS
+            const matchesTipo = tipo?.toLowerCase().includes(queryLower);
+            const matchesCategoria = categoria.categoria?.toLowerCase().includes(queryLower);
+            const matchesServico = servico?.toLowerCase().includes(queryLower);
+            const matchesValor = valor?.toString().includes(query);
+            
+            if (matchesTipo || matchesCategoria || matchesServico || matchesValor) {
+              resultados.push({
+                id: doc.id,
+                tipo,
+                categoria: categoria.categoria,
+                servico,
+                valor,
+                matchTipo: matchesTipo,
+                matchCategoria: matchesCategoria,
+                matchServico: matchesServico,
+                matchValor: matchesValor
+              });
+            }
+          });
+        });
+      });
+
+      return resultados;
+    } catch (error) {
+      console.error('Erro na busca inteligente:', error);
+      throw new Error(`Erro ao buscar: ${error.message}`);
+    }
+  }
 
   // Buscar exame por ID
   async getExameById(id) {
